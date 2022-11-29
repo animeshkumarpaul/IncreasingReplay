@@ -1,0 +1,12 @@
+
+.ipynb_checkpoints/
+
+common/__pycache__/
+
+results/
+
+__pycache__/
+
+common/.DS_Store
+
+*.ini
