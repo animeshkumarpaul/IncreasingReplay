@@ -10,7 +10,9 @@ python 3_run_mc_colab.py --exp experiment_name --algo dqn  --replay_frequency 2 
 
 ### Option 2: Execute each run seperately manually
 start = 1
+
 max_runs = start + 1
+
 python 3_run_mc_colab.py --exp experiment_name --algo dqn  --replay_frequency 2 --learning_rate 0.1 --console_output 0 --use_gpu 0 --is_mac 0 --max_runs max_runs --run_start start
 
 
