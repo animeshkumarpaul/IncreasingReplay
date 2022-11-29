@@ -3,7 +3,7 @@
 # Taken from  https://github.com/dongminlee94/deep_rl                                                          #
 # Main modification is done by Animesh Kumar Paul (animeshk@ualberta.ca) - Denoted by AKP_ADDED/AKP_MODIFIED   #
 # Thanks Videh Raj Nema (nema@ualberta.ca) for making contribution. His contribution is denoted by VRN_ADDED   #
-# Added tag denotes the newly added codes                                                                      #
+# Added tag denotes the newly added codes.                                                                     #
 ################################################################################################################
 
 
