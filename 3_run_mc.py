@@ -123,11 +123,13 @@ print(device)
 
 # Specifying paths for seeds and experiments
 seed_path = args.parent_path + '/Seeds'
-exp_path = args.parent_path + '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+#exp_path = args.parent_path + '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+exp_path = args.parent_path + '/' + args.algo+ '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 #exp_path = args.parent_path + '/exp{}_{}_'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 if not os.path.exists(exp_path):
     os.makedirs(exp_path)
 
+os._exit()
 
 """
 How does it work?:
