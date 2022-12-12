@@ -1,9 +1,9 @@
 ################################################################################################################
 #                                                                                                              #
 # Taken from  https://github.com/dongminlee94/deep_rl                                                          #
-# Main modification is done by Animesh Kumar Paul (animeshk@ualberta.ca) - Denoted by AKP_ADDED/AKP_MODIFIED   #
+# Main modified is done by Animesh Kumar Paul (animeshk@ualberta.ca) - Denoted by AKP_ADDED/AKP_MODIFIED       #
 # Thanks Videh Raj Nema (nema@ualberta.ca) for making contribution. His contribution is denoted by VRN_ADDED   #
-# Added tag denotes the newly added codes.                                                                     #
+# Added tag denotes the newly added codes                                                                      #
 ################################################################################################################
 
 
@@ -15,9 +15,21 @@ import gym
 import time, datetime
 import pandas as pd
 from collections import defaultdict
+#from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard import SummaryWriter
+#from tensorboardcolab import *
 from common.utils import *
 from dqn_ddqn import Agent
+
+#tbc=TensorBoardColab(startup_waiting_time=30)
+#SummaryWriter = tbc.get_writer()
+
+#AKP_MODIFY
+log_eval = pd.DataFrame(columns=['Metric', 'Run', 'Step', 'Undiscount_Return'])
+log_state_visitation = {'train': defaultdict(list), 'eval': defaultdict(list)}
+q_losses_all_runs = defaultdict(dict)
+
+
 
 ###########################################Configurations#####################################################################
 ## Configurations
@@ -123,13 +135,13 @@ print(device)
 
 # Specifying paths for seeds and experiments
 seed_path = args.parent_path + '/Seeds'
-#exp_path = args.parent_path + '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 exp_path = args.parent_path + '/' + args.algo+ '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+#exp_path = args.parent_path + '/' + args.algo+ '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+#exp_path = args.parent_path + '/exp{}_{}'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 #exp_path = args.parent_path + '/exp{}_{}_'.format(args.exp, args.algo) # + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 if not os.path.exists(exp_path):
     os.makedirs(exp_path)
 
-os._exit()
 
 """
 How does it work?:
@@ -147,7 +159,7 @@ These seeds stay the same across runs, i.e. if there are 20 evaluation episodes,
 (does not matter what the current run index is), the episode is run using these 20 seeds. 
 """
 #AKP_ADDED: Loading the seeds
-seeds_array_training = load_path_obj(seed_path + '/seeds_array_training.pkl')
+seeds_array_training = load_path_obj(seed_path + '/seeds_array_training_4000.pkl')
 seeds_array_eval = load_path_obj(seed_path + '/seeds_array_eval_1000.pkl')
 seeds_array_runs = load_path_obj(seed_path + '/seeds_array_runs.pkl')
 
@@ -185,6 +197,11 @@ def log_hps(path):
 
 def run_experiment():
     """Run the experiment"""
+
+    global log_eval
+    global log_state_visitation
+    global q_losses_all_runs
+
     #AKP_ADDED: For multiple Runs
     run = args.run_start -1 
     
@@ -198,9 +215,9 @@ def run_experiment():
         log_hps(hp_path)
         
     #AKP_ADDED: Run the loop maximum number of max_runs.
-    #args.max_runs = run + 1
+    args.max_runs = run + 1
     while run < args.max_runs:
-        seed_training_index = run * 4000000 #AKP_ADDED: Have a fixed seed values for same run number
+        seed_training_index = run * 4000 #AKP_ADDED: Have a fixed seed values for same run number
         run = run + 1
 
         #VRN_ADDED: allocate paths for logging
@@ -278,7 +295,7 @@ def run_experiment():
                 #AKP_ADDED: Get the seed index for this episode from the previously generated seeds file.
                 training_eps_seed = seeds_array_training[seed_training_index]
 
-                train_step_length, train_episode_return, log_state_visitation = agent.run_episode(args.max_step, args.max_interactions, writer, training_eps_seed=training_eps_seed) ###Change: 
+                train_step_length, train_episode_return, log_eval, log_state_visitation, q_losses_all_runs = agent.run_episode(args.max_step, args.max_interactions, writer, log_eval, log_state_visitation, q_losses_all_runs, training_eps_seed=training_eps_seed) ###Change: 
 
                 train_num_steps += train_step_length
                 train_sum_returns += train_episode_return
@@ -289,17 +306,15 @@ def run_experiment():
                 if args.tensorboard and args.load is None:
                     writer.add_scalar('Train/AverageReturns', train_average_return, train_num_steps) #AKP_MODIFY: change from episode to number of step 
                     writer.add_scalar('Train/EpisodeReturns', train_episode_return, train_num_steps) #AKP_MODIFY: change from episode to number of step
-                    
+                    writer.flush()
                     #AKP_ADDED
                     df = pd.DataFrame({'Episode': train_num_episodes, 'Metric': 'EpisodeReturns', 'Run': run, 'Seed_idx': seed_training_index, 'Step': train_num_steps, 'Undiscount_Return': train_episode_return}, index=[0])
                     log_train = pd.concat([log_train.loc[:], df]).reset_index(drop=True)
                     df = pd.DataFrame({'Episode': train_num_episodes, 'Metric': 'AverageReturns', 'Run': run, 'Seed_idx': seed_training_index, 'Step': train_num_steps, 'Undiscount_Return': train_average_return}, index=[0])
                     log_train = pd.concat([log_train.loc[:], df]).reset_index(drop=True)
-                    log_train.to_pickle(data_path + '/log_train.pkl')
+                    
                     #log_state_visitation_train.to_pickle(data_path + '/log_state_visitation_train.pkl')
 
-                    #VRN_ADDED
-                    np.save(data_path + '/log_state_visitation_train.npy', np.array(log_state_visitation['train'])) # use np.load(filename, allow_pickle=True) to extract, then use .item() to extract
                     seed_training_index += 1
                     
                 #eval(agent, args, writer)
@@ -321,5 +336,14 @@ def run_experiment():
         save_model(agent.qf, file_path)
         file_path = nn_params_path + '/Final_' + 'Target_Q_Network'+ '_exp_' + str(args.exp) + '_run_'+ str(run) + '_replay_frequency_'+ str(args.replay_frequency) + '_steps_' + str(agent.steps) + '.pt'
         save_model(agent.qf_target, file_path)
+    
+    #AKP_ADDED AND MODIFY
+    log_train.to_pickle(data_path + '/log_train.pkl')
+    log_eval.to_pickle(data_path + '/log_eval.pkl')
+    #VRN_ADDED and #AKP_MODIFY (moved line)
+    np.save(data_path + '/log_state_visitation_train.npy', np.array(log_state_visitation['train'])) # use np.load(filename, allow_pickle=True) to extract, then use .item() to extract
+    np.save(data_path + '/log_state_visitation_eval.npy', np.array(log_state_visitation['eval'])) # use np.load(filename, allow_pickle=True) to extract
+    np.save(data_path + '/q_losses_all_runs_train.npy', np.array(q_losses_all_runs)) # use np.load(filename, allow_pickle=True) to extract, then use .item() to extract dict
+
 
 run_experiment()

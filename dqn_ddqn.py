@@ -13,9 +13,7 @@ import pandas as pd
 import torch.optim as optim
 from collections import defaultdict
 
-log_eval = pd.DataFrame(columns=['Metric', 'Run', 'Step', 'Undiscount_Return'])
-log_state_visitation = {'train': defaultdict(list), 'eval': defaultdict(list)}
-q_losses_all_runs = defaultdict(dict)
+
 
 class Agent(object):
     """An implementation of the Deep Q-Network (DQN), Double DQN agents."""
@@ -112,6 +110,7 @@ class Agent(object):
             q2 = self.qf(obs2)
             q_target = self.qf_target(obs2)
             q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
+            #print('DDQN')
 
         q_backup = rews + self.args.gamma*(1-done)*q_target.max(1)[0]
         q_backup.to(self.device)
@@ -135,10 +134,10 @@ class Agent(object):
         # return loss
         return qf_loss.item()
 
-    def run_episode(self, max_step, max_interactions, writer, training_eps_seed=None, eval_eps_seed=None):
+    def run_episode(self, max_step, max_interactions, writer, log_eval, log_state_visitation, q_losses_all_runs, training_eps_seed=None, eval_eps_seed=None,):
         step_number = 0
         total_reward = 0
-        global log_state_visitation, q_losses_all_runs
+        #global log_state_visitation, q_losses_all_runs
         
         #AKP_ADDED: Add this to handle the starting state for all algorithm
         if self.eval_mode:
@@ -188,7 +187,7 @@ class Agent(object):
                     if self.args.tensorboard and self.args.load is None:
                         writer.add_scalar('Train/Qloss (averaged over replay frequency for this step vs this step)', np.mean(qf_losses_with_freq), self.steps) ###Change: 
                         q_losses_all_runs[self.run] = self.q_losses
-                        np.save(self.data_path + '/q_losses_all_runs_train.npy', np.array(q_losses_all_runs)) # use np.load(filename, allow_pickle=True) to extract, then use .item() to extract dict
+                        
 
                 #AKP_ADDED: Evaluate the agent on a fixed number of interactions, not episodes.
                 if self.steps % self.args.eval_per_train == 0:
@@ -196,7 +195,7 @@ class Agent(object):
                         print('###############################################################')
                         print('Offline evaluation episodes start')
                     self.seed_eval_index = 0
-                    self.eval(writer)
+                    log_eval = self.eval(writer,log_eval, log_state_visitation, q_losses_all_runs)
                     self.eval_mode = False
                     if self.args.console_output == 1:
                         print('Offline evaluation episodes end')
@@ -215,14 +214,14 @@ class Agent(object):
         # Save logs
         self.logger['LossQ averaged over time steps till now and replay frequency'] = round(np.mean(list(self.q_losses.values())), 5)
         self.logger['Epsilon']= self.args.epsilon
-        return step_number, total_reward, log_state_visitation
+        return step_number, total_reward, log_eval, log_state_visitation, q_losses_all_runs
 
     #AKP_MODIFY: Evaluate agent after fixed number of interactions, not episodes
     #def eval(agent,args, writer, train_num_steps,train_num_episodes,train_episode_return,train_average_return, start_time):
-    def eval(self, writer):
+    def eval(self, writer,log_eval, log_state_visitation, q_losses_all_runs):
         # Perform the evaluation phase -- no learning
         #if (i + 1) % args.eval_per_train == 0:
-        global log_eval
+        #global log_eval
         
         ###Change: to agent.steps
         if self.steps % self.args.eval_per_train == 0: 
@@ -233,7 +232,7 @@ class Agent(object):
             for _ in range(self.args.evaluation_episodes):
                 # Run one episode
                 eval_eps_seed = self.seeds_array_eval[self.seed_eval_index]
-                eval_step_length, eval_episode_return, log_state_visitation = self.run_episode(self.args.max_step, self.args.max_interactions, writer, eval_eps_seed=eval_eps_seed) ###Change: 
+                eval_step_length, eval_episode_return, _, _, _ = self.run_episode(self.args.max_step, self.args.max_interactions, writer, log_eval, log_state_visitation, q_losses_all_runs, eval_eps_seed=eval_eps_seed) ###Change: 
                 self.seed_eval_index += 1
 
                 eval_sum_returns += eval_episode_return
@@ -256,8 +255,8 @@ class Agent(object):
                 df = pd.DataFrame({'Metric': 'AverageReturns', 'Run': self.run, 'Step': self.steps, 'Undiscount_Return': eval_average_return}, index=[0])
                 log_eval = pd.concat([log_eval.loc[:], df]).reset_index(drop=True)
                 #log_eval = log_eval.append({'Metric': 'EpisodeReturns', 'Run': self.run, 'Step': self.steps, 'Undiscount_Return': eval_episode_return}, ignore_index = True)
-                log_eval.to_pickle(self.data_path + '/log_eval.pkl')
-                np.save(self.data_path + '/log_state_visitation_eval.npy', np.array(log_state_visitation['eval'])) # use np.load(filename, allow_pickle=True) to extract
+                
+                
 
             if self.args.phase == 'train' and self.args.console_output == 1:
                 print('---------------------------------------')
@@ -278,3 +277,6 @@ class Agent(object):
                     else:
                         #torch.save(self.policy.cpu(), ckpt_path)
                         save_model(self.policy, file_path1)
+        return log_eval
+
+        
