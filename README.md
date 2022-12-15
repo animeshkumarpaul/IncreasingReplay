@@ -1,5 +1,11 @@
+# Understanding the effect of varying amounts of replay per step in DQN
 
+I acknowledge that this work is part of the credited course group project on Reinforcement learning II at the University of Alberta. 
 
+Group Memeber:
+a) Animesh Kumar Paul <animeshk@ualberta.ca>
+b) Videh Raj Nema <nema@ualberta.ca>
+ 
 
 ## Usage
 Run codes one of the following ways:
@@ -21,3 +27,6 @@ python 2_easy_run_sequentially.py
 
 ### Option 4: Execute each run seperately automatically (Parallelly execute each run)-You need to set the hyper-paramters in 2_easy_run_parallel_backgroun.py file.
 python 2_easy_run_parallel_background.sh
+
+
+It contains also two jupyter notebooks for plotting purposes.
