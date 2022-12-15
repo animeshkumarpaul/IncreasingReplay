@@ -1,6 +1,6 @@
 # Understanding the effect of varying amounts of replay per step in DQN
 
-I acknowledge that this work is part of the credited course group project on Reinforcement learning II at the University of Alberta. 
+I acknowledge that this work is part of the credited course group project on Reinforcement learning I at the University of Alberta. 
 
 Group Memeber:
 a) Animesh Kumar Paul <animeshk@ualberta.ca>
