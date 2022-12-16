@@ -2,7 +2,7 @@
 
 I acknowledge that this work is part of the credited course group project on Reinforcement learning I at the University of Alberta. 
 
-Group Memeber:
+Group Member:
 
 a) Animesh Kumar Paul <animeshk@ualberta.ca>
 
